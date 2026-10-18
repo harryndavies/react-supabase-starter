@@ -1,0 +1,17 @@
+node_modules
+dist
+*.tsbuildinfo
+.DS_Store
+.vercel
+.tanstack
+
+# Local env and secrets (see .env.example)
+.env*
+!.env.example
+supabase/.temp
+supabase/.branches
+supabase/functions/.env
+src/lib/database.types.ts.tmp
+
+# Local tool logs
+**/.claude/

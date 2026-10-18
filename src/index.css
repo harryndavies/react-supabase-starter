@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+/* Design tokens. Change these to restyle the whole app; components only use the
+   names (bg-surface, text-muted, …), never raw colours. */
+@theme {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-muted: #475569;
+  --color-line: #e2e8f0;
+  --color-accent: #4f46e5;
+  --color-accent-text: #ffffff;
+  --color-danger: #b91c1c;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1020;
+    --color-surface: #131a2e;
+    --color-text: #e2e8f0;
+    --color-muted: #94a3b8;
+    --color-line: #24304d;
+    --color-accent: #818cf8;
+    --color-accent-text: #0b1020;
+    --color-danger: #f87171;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: light dark;
+  }
+  body {
+    @apply bg-bg font-sans text-text antialiased;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
