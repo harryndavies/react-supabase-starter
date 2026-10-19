@@ -2,16 +2,17 @@ import { useState, type FormEvent } from 'react'
 import { Button, Card, TextField } from '@/components'
 import { errorMessage } from '@/lib/errors'
 import { fieldErrors } from '@/lib/validation'
-import { signIn, signInAsGuest, signUp } from './api'
-import { GuestSchema, SignInSchema, SignUpSchema } from './schemas'
+import { requestPasswordReset, signIn, signInAsGuest, signUp } from './api'
+import { ForgotSchema, GuestSchema, SignInSchema, SignUpSchema } from './schemas'
 
-type Mode = 'sign-in' | 'sign-up' | 'guest'
-type Outcome = 'signed-in' | 'check-inbox'
+type Mode = 'sign-in' | 'sign-up' | 'guest' | 'forgot'
+type Outcome = 'signed-in' | 'check-inbox' | 'reset-sent'
 
 const TITLES: Record<Mode, string> = {
   'sign-in': 'Sign in',
   'sign-up': 'Create an account',
   guest: 'Continue as a guest',
+  forgot: 'Reset your password',
 }
 
 /** Validates the form for this mode, returning either errors or the action to run. */
@@ -32,6 +33,12 @@ function prepare(
     return {
       run: async () => ((await signUp(email, password, displayName)) ? 'signed-in' : 'check-inbox'),
     }
+  }
+  if (mode === 'forgot') {
+    const parsed = ForgotSchema.safeParse(form)
+    if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+    const { email } = parsed.data
+    return { run: () => requestPasswordReset(email).then(() => 'reset-sent' as const) }
   }
   const parsed = GuestSchema.safeParse(form)
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
@@ -66,6 +73,10 @@ export function AuthForm({ onDone }: { onDone: () => void }) {
       const outcome = await prepared.run()
       if (outcome === 'check-inbox') {
         setNotice('Check your inbox: click the link in the email to finish signing up.')
+      } else if (outcome === 'reset-sent') {
+        setNotice(
+          'If there is an account for that email, we have sent it a link to choose a new password.',
+        )
       } else {
         onDone()
       }
@@ -80,7 +91,7 @@ export function AuthForm({ onDone }: { onDone: () => void }) {
     <Card className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">{TITLES[mode]}</h1>
       <form noValidate onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4">
-        {mode !== 'sign-in' && (
+        {(mode === 'sign-up' || mode === 'guest') && (
           <TextField
             label="Your name"
             name="displayName"
@@ -89,22 +100,22 @@ export function AuthForm({ onDone }: { onDone: () => void }) {
           />
         )}
         {mode !== 'guest' && (
-          <>
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              error={errors.email}
-            />
-            <TextField
-              label="Password"
-              name="password"
-              type="password"
-              autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
-              error={errors.password}
-            />
-          </>
+          <TextField
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            error={errors.email}
+          />
+        )}
+        {(mode === 'sign-in' || mode === 'sign-up') && (
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
+            error={errors.password}
+          />
         )}
         {errors.form && (
           <p role="alert" className="text-sm font-medium text-danger">
@@ -124,6 +135,11 @@ export function AuthForm({ onDone }: { onDone: () => void }) {
         {mode !== 'sign-in' && (
           <Button variant="ghost" onClick={() => switchTo('sign-in')}>
             I already have an account
+          </Button>
+        )}
+        {mode === 'sign-in' && (
+          <Button variant="ghost" onClick={() => switchTo('forgot')}>
+            Forgot your password?
           </Button>
         )}
         {mode !== 'sign-up' && (

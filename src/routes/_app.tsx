@@ -1,4 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router'
+import { Avatar } from '@/components'
+import { useAvatarUrl, useProfile } from '@/features/settings/queries'
 import { getSession } from '@/lib/auth'
 
 // Layout for everything that needs a signed-in user. Pages under routes/_app/
@@ -18,6 +20,8 @@ const NAV = [
 ] as const
 
 function AppLayout() {
+  const profile = useProfile()
+  const avatarUrl = useAvatarUrl(profile.data?.avatar_path)
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-8">
       <header className="flex items-center justify-between gap-4 py-4">
@@ -35,6 +39,11 @@ function AppLayout() {
               {item.label}
             </Link>
           ))}
+          {profile.data && (
+            <Link to="/settings" aria-label="Your profile" className="ml-1 self-center">
+              <Avatar name={profile.data.display_name} url={avatarUrl.data} />
+            </Link>
+          )}
         </nav>
       </header>
       <main className="flex flex-1 flex-col gap-4">

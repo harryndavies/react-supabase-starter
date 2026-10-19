@@ -57,7 +57,7 @@ delete from public.notes;
 select throws_ok($$ update public.notes set user_id = pg_temp.uid('ben') $$,
   '42501', NULL, 'nobody can move a note to another owner');
 reset role;
-select is((select count(*)::int from public.notes where body <> 'Hacked'), 2,
+select is((select count(*)::int from public.notes where user_id = pg_temp.uid('ana') and body <> 'Hacked'), 2,
   'you cannot change or delete other people''s notes');
 
 -- --- clear_done_notes -------------------------------------------------------

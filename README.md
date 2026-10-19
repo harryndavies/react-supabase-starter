@@ -11,16 +11,18 @@ taken out.
 
 ## What's in the box
 
-| Area    | What you get                                                                       |
-| ------- | ---------------------------------------------------------------------------------- |
-| App     | React 19, Vite, TypeScript (strict), Tailwind CSS v4 with light and dark tokens    |
-| Routing | TanStack Router with file-based routes, per-route code splitting and an auth guard |
-| Data    | TanStack Query hooks, Zod validation of API responses and env vars, typed RPCs     |
-| Backend | Supabase: Postgres with row level security, Auth, Edge Functions, pg_cron, pg_net  |
-| Auth    | Email and password, guest accounts, upgrading a guest to email, sign out           |
-| Example | **Notes**: one feature showing the whole pattern from migration to UI to tests     |
-| PWA     | Manifest, icons, a service worker and Web Push with a scheduled reminder           |
-| Quality | ESLint, Prettier, Vitest + Testing Library, pgTAP database tests, GitHub Actions   |
+| Area    | What you get                                                                          |
+| ------- | ------------------------------------------------------------------------------------- |
+| App     | React 19, Vite, TypeScript (strict), Tailwind CSS v4 with light and dark tokens       |
+| Routing | TanStack Router with file-based routes, per-route code splitting and an auth guard    |
+| Data    | TanStack Query hooks, Zod validation of API responses and env vars, typed RPCs        |
+| Backend | Supabase: Postgres with row level security, Auth, Edge Functions, pg_cron, pg_net     |
+| Auth    | Email and password, guests (upgradable to email), password reset, account deletion    |
+| Example | **Notes**: one feature showing the whole pattern, with live updates (Realtime)        |
+| Files   | Profile pictures in a private Storage bucket: per-user folders, signed URLs, resizing |
+| UI      | Button, TextField, Card, Avatar, a bottom Sheet and toasts                            |
+| PWA     | Manifest, icons, a service worker and Web Push with a scheduled reminder              |
+| Quality | ESLint, Prettier, Vitest + Testing Library, pgTAP database tests, GitHub Actions      |
 
 ## Run it locally
 
@@ -33,7 +35,13 @@ cp .env.example .env.local  # already points at the local stack
 npm run dev                 # http://localhost:5173
 ```
 
-Create an account (local email confirmation is off) or choose **Try it without an account**.
+Sign in as **demo@example.com** / **demo-password** (from `supabase/seed.sql`), create an
+account (local email confirmation is off) or choose **Try it without an account**. Auth emails,
+such as password resets, land in the local mail catcher at http://localhost:54324.
+
+To try account deletion and push locally, also serve the Edge Functions:
+`npx supabase functions serve --env-file supabase/functions/.env` (see Push notifications for
+what goes in that file).
 
 ## Scripts
 
@@ -57,17 +65,21 @@ GitHub Actions runs the checks, tests, build and database tests on every push an
 src/
   routes/              file-based routes (src/routeTree.gen.ts is generated)
     __root.tsx         error and not-found pages
-    sign-in.tsx        sign in, sign up, continue as a guest
+    sign-in.tsx        sign in, sign up, forgot password, continue as a guest
+    reset-password.tsx where the reset email lands; choose a new password
     _app.tsx           layout and auth guard for everything signed in
     _app/notes.tsx     the example feature
-    _app/settings.tsx  profile, guest upgrade, notifications, sign out
+    _app/settings.tsx  profile and picture, guest upgrade, notifications, sign out, delete account
   features/<name>/     a feature's schemas, query hooks, components and tests
-  components/          shared UI: Button, TextField, Card
-  lib/                 env, Supabase client, auth, errors, typed RPCs, push
+  components/          shared UI: Button, TextField, Card, Avatar, Sheet, Toaster
+  lib/                 env, Supabase client, auth, errors, typed RPCs, push, toasts, images
 supabase/
   migrations/          the schema; never change the database by hand
   tests/               pgTAP tests
-  functions/send-push/ delivers Web Push notifications
+  seed.sql             local demo data (loaded by db:reset, never by db push)
+  functions/
+    send-push/         delivers Web Push notifications (called by the database)
+    delete-account/    deletes the caller's files, then their account
 public/                manifest, icons, service worker
 ```
 
@@ -82,6 +94,14 @@ public/                manifest, icons, service worker
 - **Validate at the edges.** Zod parses env vars at start-up, API responses in query hooks and
   forms before they submit.
 - **Query keys include the user**, so one person's cache can never show for another.
+- **User files go in `<bucket>/<user id>/…`** with Storage policies on that folder, and a
+  private bucket read through signed URLs. Add any new bucket to `USER_BUCKETS` in
+  `delete-account` so its files go when an account does.
+- **Realtime changes refresh queries** rather than patching the cache by hand
+  (`src/features/notes/realtime.ts`). A table needs adding to the `supabase_realtime`
+  publication first.
+- **Errors reach people as toasts** for background actions (`toast(message, 'error')`), and
+  inline for forms.
 
 ### Adding a feature
 
@@ -93,8 +113,8 @@ Using notes as the template:
 4. `src/features/<name>/`: a Zod schema, query hooks, components and their tests.
 5. A route file in `src/routes/_app/` and a link in the nav (`src/routes/_app.tsx`).
 
-When you're ready, delete the notes feature: its migration, test, `src/features/notes/`, the
-route and the reminder job.
+When you're ready, delete the notes feature: its migrations (notes, realtime), tests,
+`src/features/notes/`, the route, the reminder job and the demo notes in `supabase/seed.sql`.
 
 ## Push notifications
 
@@ -135,11 +155,13 @@ npx supabase login
 npx supabase link --project-ref <ref>
 npx supabase db push
 npx supabase functions deploy send-push
+npx supabase functions deploy delete-account
 ```
 
 In the dashboard, turn on **Authentication → Sign In / Providers → Allow anonymous sign-ins**
 for guest accounts, ideally with CAPTCHA so nobody can create users in bulk. Set **Auth → URL
-Configuration → Site URL** to your app's URL. Then do the push setup above.
+Configuration → Site URL** to your app's URL, and add `https://<your-domain>/**` to the redirect
+URLs so confirmation and password-reset emails can link back. Then do the push setup above.
 
 **Vercel.** Import the repo. `vercel.json` sets the Vite build, SPA rewrites and cache headers.
 Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and, for push, `VITE_VAPID_PUBLIC_KEY`.

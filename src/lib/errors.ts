@@ -1,3 +1,5 @@
+import { ZodError } from 'zod'
+
 // Database functions raise short codes (`raise exception 'not_signed_in'`);
 // this turns them, and common Supabase Auth errors, into friendly messages.
 const MESSAGES: Record<string, string> = {
@@ -30,6 +32,15 @@ export function toAppError(
   return new AppError('unknown')
 }
 
+/**
+ * The message to show for any error. Only AppErrors (and plain Errors the app
+ * throws on purpose) are shown as-is; validation failures of API data mean a
+ * bug, so people get the generic message and the details go to the console.
+ */
 export function errorMessage(error: unknown): string {
+  if (error instanceof ZodError) {
+    console.error('Unexpected data from the API', error)
+    return 'Something went wrong. Try again.'
+  }
   return error instanceof Error ? error.message : 'Something went wrong. Try again.'
 }

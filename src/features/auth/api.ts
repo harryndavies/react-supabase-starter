@@ -38,6 +38,20 @@ export async function upgradeGuest(email: string, password: string): Promise<voi
   if (error) throw toAppError(error)
 }
 
+/** Emails a link to /reset-password. Says nothing about whether the account exists. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error) throw toAppError(error)
+}
+
+/** Sets a new password for whoever is signed in (after a reset link, or from settings). */
+export async function setNewPassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) throw toAppError(error)
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) throw toAppError(error)

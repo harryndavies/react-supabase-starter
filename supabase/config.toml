@@ -161,7 +161,8 @@ site_url = "http://localhost:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:5173", "http://127.0.0.1:5173"]
+# Where auth emails (confirm, reset password) may send people back to.
+additional_redirect_urls = ["http://localhost:5173/**", "http://127.0.0.1:5173/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -417,3 +418,7 @@ enabled = true
 # Called by the database (pg_net) with the x-cron-secret header, not with a user JWT.
 [functions.send-push]
 verify_jwt = false
+
+# Called by signed-in users; the platform checks their JWT before the function runs.
+[functions.delete-account]
+verify_jwt = true

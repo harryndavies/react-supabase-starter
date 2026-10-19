@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { useSession } from '@/lib/auth'
-import { toAppError } from '@/lib/errors'
+import { errorMessage, toAppError } from '@/lib/errors'
 import { rpcParsed } from '@/lib/rpc'
 import { supabase } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 import { NoteSchema, sortNotes, type Note } from './schemas'
 
 // Keys include the user, so one person's cache can never show for another.
@@ -57,7 +58,10 @@ export function useSetNoteDone() {
       )
       return { previous }
     },
-    onError: (_err, _vars, context) => queryClient.setQueryData(key, context?.previous),
+    onError: (err, _vars, context) => {
+      queryClient.setQueryData(key, context?.previous)
+      toast(errorMessage(err), 'error')
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   })
 }
@@ -70,6 +74,7 @@ export function useDeleteNote() {
       const { error } = await supabase.from('notes').delete().eq('id', id)
       if (error) throw toAppError(error)
     },
+    onError: (err) => toast(errorMessage(err), 'error'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: noteKeys.all(userId) }),
   })
 }
@@ -80,6 +85,9 @@ export function useClearDone() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => rpcParsed('clear_done_notes', {}, z.number().int()),
+    onSuccess: (count) =>
+      toast(count === 1 ? 'Cleared 1 note.' : `Cleared ${count} notes.`, 'success'),
+    onError: (err) => toast(errorMessage(err), 'error'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: noteKeys.all(userId) }),
   })
 }

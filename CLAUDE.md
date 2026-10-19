@@ -18,6 +18,9 @@ Tailwind v4, Zod. See README.md for the full picture.
 - Features live in `src/features/<name>/` (schemas, queries, components, tests). Query keys
   include the user id. Parse API data with Zod.
 - Signed-in pages go under `src/routes/_app/` and get the session from `useSession()`.
+- User files: `<bucket>/<user id>/…` with folder policies, private buckets, signed URLs; add
+  new buckets to `USER_BUCKETS` in `supabase/functions/delete-account`.
+- Background errors: `toast(errorMessage(err), 'error')`. Never show raw API or Zod errors.
 - Style with the tokens in `src/index.css` (`bg-surface`, `text-muted`, …), not raw colours.
 - In pgTAP, check privileges with `has_function_privilege` instead of calling a refused
   function after `set role`: some local Postgres images crash on that.

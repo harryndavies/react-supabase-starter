@@ -10,6 +10,13 @@ export const DisplayNameSchema = z
 
 export const SignInSchema = z.object({ email: EmailSchema, password: PasswordSchema })
 export const SignUpSchema = SignInSchema.extend({ displayName: DisplayNameSchema })
+export const ForgotSchema = z.object({ email: EmailSchema })
+export const NewPasswordSchema = z
+  .object({ password: PasswordSchema, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, {
+    path: ['confirm'],
+    message: 'The passwords do not match.',
+  })
 export const GuestSchema = z.object({ displayName: DisplayNameSchema })
 
 /** Only same-site paths, so ?redirect= can never send someone to another site. */

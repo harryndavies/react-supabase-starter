@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '@/components'
 import { signOut } from '@/features/auth/api'
+import { DeleteAccountCard } from '@/features/settings/DeleteAccountCard'
 import { NotificationsCard } from '@/features/settings/NotificationsCard'
 import { ProfileCard } from '@/features/settings/ProfileCard'
 import { UpgradeGuestCard } from '@/features/settings/UpgradeGuestCard'
@@ -21,6 +22,7 @@ function SettingsPage() {
       <Button variant="secondary" className="self-start" onClick={() => void signOut()}>
         Sign out
       </Button>
+      <DeleteAccountCard />
     </>
   )
 }

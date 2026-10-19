@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 /** A note row as the API returns it. Parsing it catches schema drift early. */
 export const NoteSchema = z.object({
-  id: z.uuid(),
-  user_id: z.uuid(),
+  id: z.guid(),
+  user_id: z.guid(),
   body: z.string(),
   done: z.boolean(),
   created_at: z.string(),

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 import { AppError, errorMessage, toAppError } from './errors'
 
 describe('toAppError', () => {
@@ -23,6 +24,15 @@ describe('toAppError', () => {
 })
 
 describe('errorMessage', () => {
+  it('never shows validation internals', () => {
+    const parsed = z.object({ id: z.guid() }).safeParse({ id: 'nope' })
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      expect(errorMessage(parsed.error)).toBe('Something went wrong. Try again.')
+    }
+  })
+
   it('falls back for things that are not errors', () => {
     expect(errorMessage('boom')).toBe('Something went wrong. Try again.')
     expect(errorMessage(new Error('Nope'))).toBe('Nope')

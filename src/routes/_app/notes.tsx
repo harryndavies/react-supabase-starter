@@ -9,6 +9,7 @@ import {
   useNotes,
   useSetNoteDone,
 } from '@/features/notes/queries'
+import { useNotesRealtime } from '@/features/notes/realtime'
 import { errorMessage } from '@/lib/errors'
 
 export const Route = createFileRoute('/_app/notes')({
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/_app/notes')({
 })
 
 function NotesPage() {
+  useNotesRealtime()
   const notes = useNotes()
   const add = useAddNote()
   const setDone = useSetNoteDone()
